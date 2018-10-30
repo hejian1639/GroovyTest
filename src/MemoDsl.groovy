@@ -41,8 +41,7 @@ class MemoDsl {
      * object that contains the method name and the parameter which is the body.
      */
     def methodMissing(String methodName, args) {
-//        def section = new Section(title: methodName, body: args[0])
-//        sections << section
+        println('function '+methodName+' missing')
     }
 
     /**

@@ -13,12 +13,25 @@ MemoDsl.make {
     xml
 }
 
-//email {
-//    from 'dsl-guru@mycompany.com'
-//    to 'john.doe@waitaminute.com'
-//    subject 'The pope has resigned!'
-//    body {
-//        p 'Really, the pope has resigned!'
-//    }
-//}
+email {
+    from 'dsl-guru@mycompany.com'
+    to 'john.doe@waitaminute.com'
+    subject 'The pope has resigned!'
+    body {
+        p 'Really, the pope has resigned!'
+    }
 
+
+}
+
+def email(Closure cl) {
+    def email = new EmailSpec()
+    cl.delegate=email
+    cl()
+//    def code = cl.rehydrate(email, this, this)
+//    code.resolveStrategy = Closure.DELEGATE_ONLY
+//    code()
+}
+
+//def methodMissing(String methodName, args) {
+//}
