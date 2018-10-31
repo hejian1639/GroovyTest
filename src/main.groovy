@@ -1,10 +1,13 @@
+import library
+
+
 EmailDsl.make {
     to "Nirav Assar"
     from "Barack Obama"
     body "How are things? We are doing well. Take care"
 }
 
-MemoDsl.make {
+def m = MemoDsl.make {
     to "Nirav Assar"
     from "Barack Obama"
     body "How are things? We are doing well. Take care"
@@ -13,7 +16,9 @@ MemoDsl.make {
     xml
 }
 
-email {
+m.getXml()
+
+library.email(1) {
     from 'dsl-guru@mycompany.com'
     to 'john.doe@waitaminute.com'
     subject 'The pope has resigned!'
@@ -24,14 +29,9 @@ email {
 
 }
 
-def email(Closure cl) {
-    def email = new EmailSpec()
-    cl.delegate=email
-    cl()
-//    def code = cl.rehydrate(email, this, this)
-//    code.resolveStrategy = Closure.DELEGATE_ONLY
-//    code()
+
+def iamList = [1, 2, 3, 4, 5]  //定义一个List
+iamList.each { //调用它的each，这段代码的格式看不懂了吧？each是个函数，圆括号去哪了？
+    println it
 }
 
-//def methodMissing(String methodName, args) {
-//}
