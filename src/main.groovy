@@ -18,16 +18,49 @@ def m = MemoDsl.make {
 
 m.getXml()
 
-library.email(1) {
-    from 'dsl-guru@mycompany.com'
-    to 'john.doe@waitaminute.com'
-    subject 'The pope has resigned!'
-    body {
-        p 'Really, the pope has resigned!'
+def emailTemplate(Closure cl) {
+    def mail = library.email {
+        from 'dsl-guru@mycompany.com'
+        to 'john.doe@waitaminute.com'
+        subject 'The pope has resigned!'
+
+
     }
+
+    cl.delegate = mail
+    cl()
+    mail
+}
+
+library.email {
+
+    emailTemplate {
+        body {
+            p 'Really, the pope has resigned!'
+        }
+
+    }
+
+    emailTemplate {
+        body {
+            p 'b'
+        }
+
+    }
+
+//    for (int i = 0; i < 10; ++i) {
+//        from 'dsl-guru@mycompany.com'
+//    }
+//    to 'john.doe@waitaminute.com'
+//    subject 'The pope has resigned!'
+//    body {
+//        p 'Really, the pope has resigned!'
+//    }
 
 
 }
+
+
 
 
 def iamList = [1, 2, 3, 4, 5]  //定义一个List

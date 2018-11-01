@@ -1,8 +1,7 @@
 
 
-static def email(int i, Closure cl) {
+static def email(Closure cl) {
 
-    println(i)
     def email = new EmailSpec()
     cl.delegate = email
     cl()
