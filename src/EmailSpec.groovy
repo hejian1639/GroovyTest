@@ -1,7 +1,7 @@
 class EmailSpec {
 
-    class BodySpec{
-        void p(String p){
+    class BodySpec {
+        void p(String p) {
             println "Body: $p"
         }
     }
@@ -16,7 +16,7 @@ class EmailSpec {
 
     void body(Closure code) {
         bodySpec = new BodySpec()
-        code.delegate=bodySpec
+        code.delegate = bodySpec
 //        def code = body.rehydrate(bodySpec, this, this)
 //        code.resolveStrategy = Closure.DELEGATE_ONLY
         code()

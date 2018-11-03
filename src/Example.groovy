@@ -18,6 +18,13 @@ class Example {
         }
 
 
+        Student mst = new Student()
+        mst.Name = "Joe"
+        mst.ID = 1
+
+        println(mst.Name)
+        println(mst.ID)
+        mst.AddMarks()
     }
 
 

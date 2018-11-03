@@ -19,6 +19,7 @@ class MemoDsl {
         // any method called in closure will be delegated to the memoDsl class
         closure.delegate = memoDsl
         closure()
+        memoDsl
     }
 
     /**
@@ -104,6 +105,10 @@ class MemoDsl {
             }
         }
         println writer
+    }
+
+    def invokeMethod(String name, Object args) {
+        System.out.println ("called invokeMethod $name $args")
     }
 
     /**
