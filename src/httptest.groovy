@@ -1,0 +1,1 @@
+HttpUtil.doPost("http://172.17.161.216:8080/percent", [percentOf1xx: 1, percentOf2xx: 1, percentOf3xx: 1, percentOf4xx: 1, percentOf5xx: 1])
