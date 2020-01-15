@@ -3,6 +3,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import io.reactivex.Observable;
 import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.functions.Function;
 import lombok.val;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.HttpClient;
@@ -34,73 +35,7 @@ public class RxUploadFlink {
         String host = "http://172.17.162.177:8081";
         File file = new File("/Users/jianhe/new/riil-biz-data-center/biz-data-center-job/target/biz-data-center-job_1.0-SNAPSHOT.jar");
 
-        Observable.create(
-                (ObservableOnSubscribe<String>) subscriber -> {
-                    try (CloseableHttpClient client = HttpClients.createDefault()) {
-                        HttpGet get = new HttpGet(host + "/jobs/overview");
-
-                        try (CloseableHttpResponse response = client.execute(get)) {
-
-                            System.out.println(response.getStatusLine());
-
-                            HttpEntity entity = response.getEntity();
-
-                            if (entity == null) {
-                                throw new RuntimeException("no result");
-
-                            }
-
-                            System.out.println("Response content length: " + entity.getContentLength());
-                            JSONObject json = JSON.parseObject(EntityUtils.toString(entity));
-                            JSONArray jsonArray = json.getJSONArray("jobs");
-                            System.out.println(jsonArray);
-
-                            EntityUtils.consume(entity);
-
-                            for (int i = 0; i < jsonArray.size(); i++) {
-
-                                JSONObject element = jsonArray.getJSONObject(i);
-                                if (element.getString("state").equals("CANCELED")) {
-                                    continue;
-                                }
-                                subscriber.onNext(element.getString("jid"));
-                            }
-                        }
-
-                    }
-
-
-                    subscriber.onComplete();
-
-                })
-                .doOnNext(jid -> {
-                    try (CloseableHttpClient client = HttpClients.createDefault()) {
-                        HttpGet get = new HttpGet(host + "/jobs/" + jid + "/yarn-cancel");
-
-                        try (CloseableHttpResponse response = client.execute(get)) {
-
-                            System.out.println(response.getStatusLine());
-
-                            HttpEntity entity = response.getEntity();
-
-                            if (entity == null) {
-                                throw new RuntimeException("no result");
-
-                            }
-
-                            System.out.println("Response content length: " + entity.getContentLength());
-
-                            System.out.println(EntityUtils.toString(entity));
-
-                            EntityUtils.consume(entity);
-
-                        }
-
-                    }
-
-                }).subscribe();
-
-        Observable.create(
+        Observable<URI> upload = Observable.create(
                 (ObservableOnSubscribe<String>) subscriber -> {
 
                     try (CloseableHttpClient client = HttpClients.createDefault()) {
@@ -129,12 +64,8 @@ public class RxUploadFlink {
 
                         }
 
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     }
 
-
-//                    subscriber.onComplete();
 
                 })
                 .map(filename -> {
@@ -147,19 +78,15 @@ public class RxUploadFlink {
                     System.out.println("Found value: " + m.group(0));
                     System.out.println("Found value: " + m.group(1));
                     String jar = m.group(1);
-                    try {
-                        URI url = new URIBuilder(host + "/jars/" + jar + "/run")
-                                .addParameter("entry-class", "com.riil.baymax.job.NpvTask")
-                                .addParameter("program-args", "--task-name riil-npv-task --npv-input-topic TOPIC_GATEWAY_NPV --dns-output-topic flink-dns-out --http-output-topic flink-http-out --tcp-output-topic flink-tcp-out --traffic-output-topic flink-traffic-out --group.id flink-npv --batch_size 20000 --npv_queue_size 32768 --npv_udp_port 10514 --dbUrl jdbc:clickhouse://172.17.162.177:8123/default  --redis-host 172.17.162.177 --bootstrap.servers 172.17.162.177:9092")
-                                .build();
-                        System.out.println(url);
-                        return url;
-                    } catch (URISyntaxException e) {
-                        return Observable.error(e);
-                    }
+                    URI url = new URIBuilder(host + "/jars/" + jar + "/run")
+                            .addParameter("entry-class", "com.riil.baymax.job.NpvTask")
+                            .addParameter("program-args", "--task-name riil-npv-task --npv-input-topic TOPIC_GATEWAY_NPV --dns-output-topic flink-dns-out --http-output-topic flink-http-out --tcp-output-topic flink-tcp-out --traffic-output-topic flink-traffic-out --group.id flink-npv --batch_size 20000 --npv_queue_size 32768 --npv_udp_port 10514 --dbUrl jdbc:clickhouse://172.17.162.177:8123/default  --redis-host 172.17.162.177 --bootstrap.servers 172.17.162.177:9092")
+                            .build();
+                    System.out.println(url);
+                    return url;
 
                 })
-                .subscribe(url -> {
+                .doOnNext(url -> {
                     try (CloseableHttpClient client = HttpClients.createDefault()) {
                         HttpPost post = new HttpPost(url.toString());
                         try (CloseableHttpResponse response = client.execute(post)) {
@@ -176,11 +103,76 @@ public class RxUploadFlink {
                         }
 
 
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    }
+                });
+
+        Observable.create(
+                (ObservableOnSubscribe<JSONObject>) subscriber -> {
+                    try (CloseableHttpClient client = HttpClients.createDefault()) {
+                        HttpGet get = new HttpGet(host + "/jobs/overview");
+
+                        try (CloseableHttpResponse response = client.execute(get)) {
+
+                            System.out.println(response.getStatusLine());
+
+                            HttpEntity entity = response.getEntity();
+
+                            if (entity == null) {
+                                throw new RuntimeException("no result");
+
+                            }
+
+                            System.out.println("Response content length: " + entity.getContentLength());
+                            JSONObject json = JSON.parseObject(EntityUtils.toString(entity));
+                            JSONArray jsonArray = json.getJSONArray("jobs");
+                            System.out.println(jsonArray);
+
+                            EntityUtils.consume(entity);
+
+                            for (int i = 0; i < jsonArray.size(); i++) {
+
+                                subscriber.onNext(jsonArray.getJSONObject(i));
+                            }
+                        }
+
                     }
 
-                });
+
+                    subscriber.onComplete();
+
+                })
+                .filter(json -> !json.getString("state").equals("CANCELED"))
+                .map(json -> json.getString("jid"))
+                .doOnNext(jid -> {
+                    try (CloseableHttpClient client = HttpClients.createDefault()) {
+                        HttpGet get = new HttpGet(host + "/jobs/" + jid + "/yarn-cancel");
+
+                        try (CloseableHttpResponse response = client.execute(get)) {
+
+                            System.out.println(response.getStatusLine());
+
+                            HttpEntity entity = response.getEntity();
+
+                            if (entity == null) {
+                                throw new RuntimeException("no result");
+
+                            }
+
+                            System.out.println("Response content length: " + entity.getContentLength());
+
+                            System.out.println(EntityUtils.toString(entity));
+
+                            EntityUtils.consume(entity);
+
+                        }
+
+                    }
+
+                })
+                .doOnComplete(() -> {
+                    System.out.println("clean jobs complete");
+                    upload.subscribe();
+                }).subscribe();
 
 
     }
